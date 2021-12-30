@@ -1,0 +1,11 @@
+.wrapper {
+    /* max-width: 80%; */
+    /* margin: auto; */
+    display: flex;
+    flex-direction: row;
+
+}
+.col-wrapper {
+    display: flex;
+    flex-direction: column;
+}
