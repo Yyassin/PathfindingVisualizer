@@ -1,81 +1,78 @@
-import PriorityQueue from '../utils/priorityQueue/PriorityQueue';
-import Node from "../utils/Node";
+import PriorityQueue from "../utils/priorityQueue/PriorityQueue";
+import Node from "../utils/node/Node";
+import { heuristicFunction } from "../types";
+import { manhattanHeuristic } from "./common";
 
-type heuristicFunction = (nodeA: Node, nodeB: Node) => number;
+const astar = (
+	startNode: Node,
+	endNode: Node,
+	heuristic: heuristicFunction = manhattanHeuristic
+) => {
+	const openSet = new PriorityQueue<Node>();
+	const closedSet = new Set<Node>();
+	const path = new Array<Node>();
+	const visitedNodes = new Array<Node>();
 
-const astar = (startNode: Node, endNode: Node, heuristic: heuristicFunction = manhattanHeuristic) => {
-    const openSet = new PriorityQueue<Node>();
-    // const p = new PriorityQueue<String>();
+	let currentNode: Node | null = null;
+	openSet.push(startNode);
+	while (!openSet.isEmpty()) {
+		// Can't be null otherwise the set would've been empty
+		currentNode = openSet.pop()!;
 
-    // p.push("2", 1, 2);
-    // p.push("3", 3, 0);
-    // p.push("5", 100, 0);
-    // p.push("1", 1, 1);
-    // p.push("4", 3, 1);
+		if (closedSet.has(currentNode)) continue;
+		if (currentNode !== startNode && currentNode !== endNode) {
+			visitedNodes.push(currentNode);
+		}
 
-    // while (!p.isEmpty()) {
-    //     console.log(p.pop());
-    // }
+		closedSet.add(currentNode);
 
-    const closedSet = new Set<Node>();
-    const path = new Array<Node>();
-    const visitedNodes = new Array<Node>();
-    
-    let currentNode: Node | null = null;
-    openSet.push(startNode);
-    while(!openSet.isEmpty()) {
-        // Can't be null otherwise the set would've been empty
-        currentNode = openSet.pop()!;
-        closedSet.add(currentNode);
+		// We've reached the last node, path found.
+		if (currentNode === endNode) {
+			buildPath(path, currentNode);
+			return { path, visitedNodes, success: true };
+		}
 
-        if (currentNode !== startNode && currentNode !== endNode) { visitedNodes.push(currentNode); }
-        
+		updateNeighbours(currentNode, endNode, closedSet, openSet, heuristic);
+	}
 
-        // We've reached the last node, path found.
-        if (currentNode === endNode) {
-            buildPath(path, currentNode);
-            return { path, visitedNodes, success: true }
-        }
-
-        updateNeighbours(currentNode, endNode, closedSet, openSet, heuristic);
-    }
-
-    return { path, visitedNodes, success: false, error: "No path exists!" }
-}
+	return { path, visitedNodes, success: false, error: "No path exists!" };
+};
 
 const buildPath = (path: Array<Node>, endNode: Node): void => {
-    let temp = endNode;
-    path.push(temp);
-    while(temp.previous != null) {
-        path.push(temp.previous);
-        temp = temp.previous;
-    }
-}
+	let temp = endNode;
+	path.push(temp);
+	while (temp.previous != null) {
+		path.push(temp.previous);
+		temp = temp.previous;
+	}
+};
 
-const updateNeighbours = (node: Node, endNode: Node, closedSet: Set<Node>, openSet: PriorityQueue<Node>, heuristic: heuristicFunction) => {
-    for (const neighbour of node) {
-        // Don't visit if already visited or wall
-        if (closedSet.has(neighbour) || neighbour.isWall) continue;
+const updateNeighbours = (
+	node: Node,
+	endNode: Node,
+	closedSet: Set<Node>,
+	openSet: PriorityQueue<Node>,
+	heuristic: heuristicFunction
+) => {
+	for (const neighbour of node) {
+		// Don't visit if already visited or wall
+		if (closedSet.has(neighbour) || neighbour.isWall) continue;
 
-        /* Update the g value for all neighbours */
-        const tempG  = node.g + 1;
-        
-        if (openSet.includes(neighbour) && tempG >= openSet.get(neighbour)!.g) {
-            continue;
-        }
+		/* Update the g value for all neighbours */
+        const cost = neighbour.isWeight ? Node.WEIGHT : 1;
+		const tempG = node.g + cost;
 
-        neighbour.g = tempG;
-        neighbour.h = heuristic(neighbour, endNode);
-        neighbour.f = neighbour.g + neighbour.h;
-        neighbour.previous = node;
+		if (openSet.includes(neighbour) && tempG >= openSet.get(neighbour)!.g) {
+			continue;
+		}
 
-        openSet.push(neighbour);
-    }
-}
+		neighbour.g = tempG;
+		neighbour.h = heuristic(neighbour, endNode);
+		neighbour.f = neighbour.g + neighbour.h;
+		neighbour.previous = node;
 
-// Manhattan distance
-const manhattanHeuristic = (nodeA: Node, nodeB: Node): number => {
-    return Math.abs(nodeA.x - nodeB.x) + Math.abs(nodeA.y - nodeB.y);
-}
+		openSet.push(neighbour);
+	}
+};
 
 export default astar;

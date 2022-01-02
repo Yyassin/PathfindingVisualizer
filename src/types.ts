@@ -1,4 +1,9 @@
-import Node from "./utils/Node";
+import Node from "./utils/node/Node";
+
+export interface Vector2 {
+    x: number,
+    y: number
+}
 
 export interface NodeInterface<T> {
     getValue(): T
@@ -30,4 +35,6 @@ export enum directionType {
 
 export type pathAlgorithm = (startNode: Node, endNode: Node) => 
     { path: Array<Node>, visitedNodes: Array<Node>, success: boolean, error?: string | undefined };
+
+export type heuristicFunction = (nodeA: Node, nodeB: Node) => number;
 

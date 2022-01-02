@@ -1,6 +1,7 @@
 export {}
 
 /*
+TODO
 bellmenan ford
 ida*
 jump point
@@ -12,6 +13,7 @@ iterative deepening depth
 
 two node path
 
+weights
 maze generation
 random
 recursive division

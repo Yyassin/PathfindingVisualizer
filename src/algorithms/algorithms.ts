@@ -6,12 +6,4 @@ import BFS from "./bfs";
 import bidirectionalBFS from "./bidirectionalBFS";
 import DFS from "./dfs";
 
-export {
-    astar,
-    greedy,
-    djikstra,
-    swarm,
-    BFS,
-    bidirectionalBFS,
-    DFS
-}
+export { astar, greedy, djikstra, swarm, BFS, bidirectionalBFS, DFS };
