@@ -10,45 +10,27 @@ import {
 	DFS,
 	bidirectionalBFS,
 } from "../algorithms/algorithms";
-import {
-	COLUMNS,
-	ROWS,
-	START_COL,
-	END_COL,
-	START_ROW,
-	END_ROW,
-} from "../utils/constants";
-import { nodeType, pathAlgorithm, Vector2 } from "../types";
+import { mazeAlgorithm, nodeType, pathAlgorithm, Vector2 } from "../types";
 import "./styles/PathFinder.css";
 import { clearAllTimeouts } from "../utils/clearAllTimeouts";
-import LinkedStack from "../utils/linkedCollection/LinkedStack";
 import { recursiveBacktracker } from "../algorithms/maze/recursiveBacktracker";
-import { start } from "repl";
+import Navbar from "./Nav";
+import { randomGenerator } from "../algorithms/maze/randomGenerator";
+import useWindowSize from "../utils/hooks/useWindowSize";
 
-const fillGrid = (grid: Array<Array<Node>>): void => {
-	for (let i = 0; i < COLUMNS; i++) {
-		for (let j = 0; j < ROWS; j++) {
-			grid[i][j] = new Node(i, j);
-		}
-	}
-};
+export enum pathAlgorithmName {
+	ASTAR = "A*",
+	GREEDY = "Greedy",
+	DJIKSTRA = "Djikstra",
+	SWARM = "Swarm",
+	BFS = "BFS",
+	BIDIRECTIONAL_BFS = "Bidirectional BFS",
+	DFS = "DFS",
+}
 
-const initNodeNeighbours = (grid: Array<Array<Node>>): void => {
-	for (let i = 0; i < COLUMNS; i++) {
-		for (let j = 0; j < ROWS; j++) {
-			grid[i][j].addNeighbours(grid);
-		}
-	}
-};
-
-enum pathAlgorithmName {
-	ASTAR = "astar",
-	GREEDY = "greedy",
-	DJIKSTRA = "djikstra",
-	SWARM = "swarm",
-	BFS = "bfs",
-	BIDIRECTIONAL_BFS = "bidirectionalBFS",
-	DFS = "dfs",
+export enum mazeAlgorithmName {
+	RANDOM = "Random",
+	RECURSIVE_BACKTRACKER = "Recursive Backtracker"
 }
 
 const pathPlanners: Record<pathAlgorithmName, pathAlgorithm> = {
@@ -61,36 +43,8 @@ const pathPlanners: Record<pathAlgorithmName, pathAlgorithm> = {
 	[pathAlgorithmName.DFS]: DFS,
 };
 
-const setAllWalls = (grid: Node[][]): void => {
-	grid.forEach((row: Array<Node>, rowIdx: number) => {
-		row.forEach((node: Node, nodeIdx: number) => {
-			node.isWall = true;
-		});
-	});
-};
-
-const randomMazeGenerator = (
-	grid: Node[][],
-	startNode: Vector2,
-	endNode: Vector2
-): Vector2[] => {
-	const walls = [] as Vector2[];
-	grid.forEach((row: Array<Node>, x: number) => {
-		row.forEach((node: Node, y: number) => {
-			if (
-				(x === startNode.x && y === startNode.y) ||
-				(x === endNode.x && y === endNode.y)
-			) {
-				return;
-			}
-
-            if (Math.random() < 0.33) { walls.push({x, y})}
-		});
-	});
-    
-    walls.sort(() => Math.random() - 0.5);
-    return walls;
-};
+const NODE_SIDE_LENGTH = 42;
+const MOBILE_WIDTH = 1200;
 
 const PathFinder: FC<{}> = (): ReactElement => {
 	const [grid, setGrid] = useState([] as Node[][]);
@@ -98,11 +52,24 @@ const PathFinder: FC<{}> = (): ReactElement => {
 	const [selectedPathAlgorithmName, setSelectedPathAlgorithmName] = useState(
 		pathAlgorithmName.ASTAR
 	);
+	const [selectedMazeAlgorithmName, setSelectedMazeAlgorithmName] = useState(
+		mazeAlgorithmName.RECURSIVE_BACKTRACKER
+	);
+
+	const windowSize = useWindowSize();
+	const [rows, setRows] = useState(11);
+	const [cols, setCols] = useState(11);
+
+	const startCol = 0;
+	const startRow = 0;
+	const endCol = cols - 1;
+	const endRow = rows - 1;
+
 	const wKeyDown = useRef(false);
 	const mouseDown = useRef(false);
 	const selectedNodeType = useRef(nodeType.NORMAL);
-	const startLocation = useRef({ x: START_COL, y: START_ROW });
-	const endLocation = useRef({ x: END_COL, y: END_ROW });
+	const startLocation = useRef({ x: startCol, y: startRow });
+	const endLocation = useRef({ x: endCol, y: endRow });
 
 	const weightedPlanners = [
 		pathAlgorithmName.ASTAR,
@@ -114,12 +81,42 @@ const PathFinder: FC<{}> = (): ReactElement => {
 	);
 
     // TODO: Is running ref to block walling during runs
-
 	const timeoutId = useRef(0);
+
+	useEffect(() => {
+		if (!windowSize.width || !windowSize.height) {
+			windowSize.width = window.innerWidth;
+			windowSize.height = window.innerHeight;
+		 }
+
+		let offsetH = 3, offsetW = 3;
+		if ( windowSize.width <= MOBILE_WIDTH ) { offsetH = 5; offsetW = 5; }
+
+		setRows( 2 * Math.floor(windowSize.height / (2 * NODE_SIDE_LENGTH)) - offsetH); // ensure odd
+		setCols( 2 * Math.floor(windowSize.width / (2 * NODE_SIDE_LENGTH)) - offsetW ); // ensure odd
+
+	}, [windowSize])
+
+	const fillGrid = (grid: Array<Array<Node>>): void => {
+		for (let i = 0; i < cols; i++) {
+			for (let j = 0; j < rows; j++) {
+				grid[i][j] = new Node(i, j, { x: startCol, y: startRow }, {x: endCol, y: endRow });
+			}
+		}
+	};
+	
+	const initNodeNeighbours = (grid: Array<Array<Node>>): void => {
+		for (let i = 0; i < cols; i++) {
+			for (let j = 0; j < rows; j++) {
+				grid[i][j].addNeighbours(grid);
+			}
+		}
+	};
 
     const recursiveBacktrackerMaze = () => {
         clearVisited();
         clearWalls();
+		clearWeights();
  
         if (startLocation.current.x % 2 == 0) {
             grid[startLocation.current.x][startLocation.current.y].isStart = false;
@@ -193,7 +190,7 @@ const PathFinder: FC<{}> = (): ReactElement => {
 
     const randomMaze = () => {
         clearVisited();
-        const walls = randomMazeGenerator(grid, startLocation.current, endLocation.current);
+        const walls = randomGenerator(grid, startLocation.current, endLocation.current);
 
         walls.forEach((wall, idx) => {
             grid[wall.x][wall.y].isWall = true;
@@ -204,6 +201,11 @@ const PathFinder: FC<{}> = (): ReactElement => {
 			}, 10 * idx);
 		});
     }
+
+	const mazeGenerators: Record<mazeAlgorithmName, () => void> = {
+		[mazeAlgorithmName.RANDOM]: randomMaze,
+		[mazeAlgorithmName.RECURSIVE_BACKTRACKER]: recursiveBacktrackerMaze,
+	};
 
 	const armTimeout = () => {
 		timeoutId.current = setTimeout(() => {}, 0) as unknown as number;
@@ -234,8 +236,8 @@ const PathFinder: FC<{}> = (): ReactElement => {
 
 	const initGrid = (): void => {
 		const grid: Array<Array<Node>> = Array.from(
-			Array(COLUMNS),
-			() => new Array(ROWS)
+			Array(cols),
+			() => new Array(rows)
 		);
 
 		fillGrid(grid);
@@ -244,8 +246,8 @@ const PathFinder: FC<{}> = (): ReactElement => {
 
 		setVisitedNodes(visitedNodes);
 
-		startLocation.current = { x: START_COL, y: START_ROW };
-		endLocation.current = { x: END_COL, y: END_ROW };
+		startLocation.current = { x: startCol, y: startRow };
+		endLocation.current = { x: endCol, y: endRow };
 	};
 
 	useEffect(() => {
@@ -258,7 +260,7 @@ const PathFinder: FC<{}> = (): ReactElement => {
 			window.removeEventListener("mousedown", () => {});
 			window.removeEventListener("mouseup", () => {});
 		};
-	}, []);
+	}, [windowSize]);
 
 	useEffect(() => {
 		window.addEventListener("keydown", (e) => {
@@ -350,6 +352,8 @@ const PathFinder: FC<{}> = (): ReactElement => {
 		}, 20 * visitedNodes.length);
 	};
 
+	const generateMaze = () => { mazeGenerators[selectedMazeAlgorithmName]() }
+
 	const clickHandler = (x: number, y: number) => {
 		if (x === startLocation.current.x && y === startLocation.current.y) {
 			selectedNodeType.current = nodeType.START;
@@ -400,7 +404,7 @@ const PathFinder: FC<{}> = (): ReactElement => {
 
 	const gridNodes = () => {
 		return (
-			<div className="wrapper">
+			<div className="grid-wrapper">
 				{grid.map((row: Array<Node>, rowIdx: number) => {
 					return (
 						<div className="col-wrapper" key={rowIdx}>
@@ -430,74 +434,26 @@ const PathFinder: FC<{}> = (): ReactElement => {
 		);
 	};
 
+	const actions = {
+		pathPlan: { name: "Plan Path", action: visualize },
+		generateMaze: { name: "Generate Maze", action: generateMaze },
+		clearPath: { name: "Clear Path", action: clearVisited },
+		clearObstacles: { name: "Clear Obstacles", action: () => { clearWalls(); clearWeights(); }},
+		resetBoard: { name: "Reset Board", action: resetGrid},
+
+		randomMaze: { name: "Random Maze", action: randomMaze },
+		recursiveBackTracker: { name: "Recursive Backtracker Maze", action: recursiveBacktrackerMaze },
+	}
+
 	return (
 		<div className="path-finder">
-			<button onClick={visualize}>Vis</button>
-			<button onClick={() => randomMaze()}>
-				Random Maze
-			</button>
-            <button onClick={() => recursiveBacktrackerMaze()}>
-				Recursive Backtracker Maze
-			</button>
-			<button onClick={() => resetGrid()}>Reset Board</button>
-			<button onClick={() => clearVisited()}>Clear Path</button>
-            <button onClick={() => clearWalls()}>Clear Walls</button>
-			<button
-				onClick={() =>
-					setSelectedPathAlgorithmNameWrapped(pathAlgorithmName.ASTAR)
-				}
-			>
-				{pathAlgorithmName.ASTAR}
-			</button>
-			<button
-				onClick={() =>
-					setSelectedPathAlgorithmNameWrapped(
-						pathAlgorithmName.GREEDY
-					)
-				}
-			>
-				{pathAlgorithmName.GREEDY}
-			</button>
-			<button
-				onClick={() =>
-					setSelectedPathAlgorithmNameWrapped(
-						pathAlgorithmName.DJIKSTRA
-					)
-				}
-			>
-				{pathAlgorithmName.DJIKSTRA}
-			</button>
-			<button
-				onClick={() =>
-					setSelectedPathAlgorithmNameWrapped(pathAlgorithmName.SWARM)
-				}
-			>
-				{pathAlgorithmName.SWARM}
-			</button>
-			<button
-				onClick={() =>
-					setSelectedPathAlgorithmNameWrapped(pathAlgorithmName.BFS)
-				}
-			>
-				{pathAlgorithmName.BFS}
-			</button>
-			<button
-				onClick={() =>
-					setSelectedPathAlgorithmNameWrapped(
-						pathAlgorithmName.BIDIRECTIONAL_BFS
-					)
-				}
-			>
-				{pathAlgorithmName.BIDIRECTIONAL_BFS}
-			</button>
-			<button
-				onClick={() =>
-					setSelectedPathAlgorithmNameWrapped(pathAlgorithmName.DFS)
-				}
-			>
-				{pathAlgorithmName.DFS}
-			</button>
-			<h2>{selectedPathAlgorithmName}</h2>
+			<Navbar 
+				selectedPathAlgorithmName={selectedPathAlgorithmName}
+				selectedMazeAlgorithmName={selectedMazeAlgorithmName}
+				setSelectedPathAlgorithmName={setSelectedPathAlgorithmNameWrapped}
+				setSelectedMazeAlgorithmName={setSelectedMazeAlgorithmName}
+				actions={actions}
+			/>
 			{gridNodes()}
 		</div>
 	);

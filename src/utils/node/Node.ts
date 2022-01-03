@@ -1,5 +1,4 @@
-import { directionType } from "../../types";
-import { START_COL, END_COL, START_ROW, END_ROW } from "../constants";
+import { directionType, Vector2 } from "../../types";
 
 /**
  * Class that implements a given node in the grid.
@@ -29,11 +28,11 @@ class Node {
 	 * @param x number, the x coordinate.
 	 * @param y number, the y coordinate.
 	 */
-	constructor(x: number, y: number) {
+	constructor(x: number, y: number, start: Vector2, end: Vector2) {
 		this._x = x;
 		this._y = y;
-		this._isStart = this._x === START_COL && this._y === START_ROW;
-		this._isEnd = this._x === END_COL && this._y === END_ROW;
+		this._isStart = this._x === start.x && this._y === start.y;
+		this._isEnd = this._x === end.x && this._y === end.y;
 	}
 
 	/**

@@ -3,7 +3,11 @@ module.exports = {
   // https://tailwindcss.com/docs/just-in-time-mode
   // mode: "jit",
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'regal-blue': '#1F1D36',
+      }
+    }
   },
   variants: {},
   plugins: [],

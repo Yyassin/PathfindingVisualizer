@@ -1,7 +1,14 @@
 .node {
-    width: 15px;
-    height: 15px;
-    border: 1px solid black;
+    width: 29px;
+    height: 29px;
+
+    margin: 5px;
+    /* /border: 1px solid #e1d9d1; */
+
+    border-radius: 4px;
+    background: #3F3351;
+    box-shadow:  3px 3px 7px #191420,
+                -3px -3px 7px #655282;
 }
 
 .node-start {
@@ -34,22 +41,22 @@
   @keyframes visitedAnimation {
     0% {
       transform: scale(0.3);
-      background-color: rgba(0, 0, 66, 0.75);
+      background-color: rgb(134, 72, 121);
       border-radius: 10%;
     }
   
     50% {
-      background-color: peachpuff;
+      background-color: rgb(233, 166, 166);
     }
   
     75% {
       transform: scale(1.2);
-      background-color: peachpuff;
+      background-color: rgb(233, 166, 166);
     }
   
     100% {
       transform: scale(1);
-      background-color: peachpuff;
+      background-color: rgb(233, 166, 166);
     }
   }
   
@@ -117,18 +124,16 @@
   @keyframes shortestPath {
     0% {
       transform: scale(0.6);
-      background-color: aquamarine;
+      background-color: #ccb7e5;
     }
   
     50% {
       transform: scale(1.2);
-      background-color: aquamarine;
+      background-color: #ccb7e5;
     }
   
     100% {
       transform: scale(1);
-      background-color: aquamarine;
+      background-color: #ccb7e5;
     }
   }
-
-  

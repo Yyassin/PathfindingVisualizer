@@ -36,5 +36,7 @@ export enum directionType {
 export type pathAlgorithm = (startNode: Node, endNode: Node) => 
     { path: Array<Node>, visitedNodes: Array<Node>, success: boolean, error?: string | undefined };
 
+export type mazeAlgorithm = (grid: Node[][], startNode: Vector2, endNode: Vector2) => any;
+
 export type heuristicFunction = (nodeA: Node, nodeB: Node) => number;
 
